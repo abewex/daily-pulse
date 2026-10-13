@@ -36,13 +36,15 @@ python3 builder/pulse.py <scratch>/data.json <scratch>/out
 Then: confirm 14 pages, render pages 1, 2 and 5 to PNG and look at them (nothing blank, no overflowed tiny text, links present), and check the printed totals match the ledger.
 
 ## 5. Send
+The send branch must start from `main` (GitHub reads the workflow file from the pushed branch).
 ```
-cd <clone>; git fetch origin
+cd <clone>; git fetch origin main
 git ls-remote --exit-code --heads origin outbox && echo "outbox exists - stop and report"
-git checkout --orphan outbox && git rm -rq --cached . && git clean -fdq
-cp <scratch>/out/Abes_Daily_Pulse_*.pdf . && git add Abes_Daily_Pulse_*.pdf
+git checkout -B outbox origin/main
+cp <scratch>/out/Abes_Daily_Pulse_*.pdf . && git add -f Abes_Daily_Pulse_*.pdf
 git commit -qm "Pulse $(date +%F)" && git push origin outbox
+git checkout main && git branch -D outbox && rm -f Abes_Daily_Pulse_*.pdf
 ```
 Use branch `outbox-test` instead of `outbox` for any test (goes to TEST_EMAIL, not the Kindle).
 
-Then watch the "Send Pulse to Kindle" Actions run (`gh api repos/abewex/daily-pulse/actions/runs?per_page=1`). Report success or the failure reason in one line, and send the PDF to Abe in the conversation either way.
+Then watch the "Send Pulse to Kindle" Actions run (`gh api repos/abewex/daily-pulse/actions/runs?per_page=1`). Job logs aren't readable from the session; read the reason from the job's check-run annotations (`gh api repos/abewex/daily-pulse/check-runs/<job id>/annotations`). This session can't delete remote branches; the workflow deletes `outbox` itself after a successful send. Report success or the failure reason in one line, and send the PDF to Abe in the conversation either way.

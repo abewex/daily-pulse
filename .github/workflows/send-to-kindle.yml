@@ -33,17 +33,22 @@ jobs:
           import glob, os, smtplib, ssl, sys
           from email.message import EmailMessage
 
+          def fail(msg):
+              # ::error:: shows up as a run annotation, readable via the API without log access.
+              print(f"::error title=Pulse send failed::{msg}")
+              sys.exit(1)
+
           for k in ("GMAIL_USERNAME", "GMAIL_APP_PASSWORD", "TO_ADDR"):
               if not os.environ.get(k):
-                  sys.exit(f"Missing secret for {k} - add it under Settings > Secrets and variables > Actions")
+                  fail(f"Missing secret {k} - add it under Settings > Secrets and variables > Actions")
 
           pdfs = sorted(glob.glob("Abes_Daily_Pulse_*.pdf"))
           if len(pdfs) != 1:
-              sys.exit(f"Expected exactly one Abes_Daily_Pulse_*.pdf, found {pdfs}")
+              fail(f"Expected exactly one Abes_Daily_Pulse_*.pdf, found {pdfs}")
           path = pdfs[0]
           data = open(path, "rb").read()
           if not data.startswith(b"%PDF") or len(data) < 10_000:
-              sys.exit(f"{path} doesn't look like a valid PDF ({len(data)} bytes)")
+              fail(f"{path} doesn't look like a valid PDF ({len(data)} bytes)")
 
           msg = EmailMessage()
           msg["From"] = os.environ["GMAIL_USERNAME"]
@@ -53,9 +58,15 @@ jobs:
           msg.set_content("The Pulse is attached.")
           msg.add_attachment(data, maintype="application", subtype="pdf", filename=os.path.basename(path))
 
-          with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as s:
-              s.login(os.environ["GMAIL_USERNAME"], os.environ["GMAIL_APP_PASSWORD"])
-              s.send_message(msg)
+          try:
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as s:
+                  s.login(os.environ["GMAIL_USERNAME"], os.environ["GMAIL_APP_PASSWORD"].replace(" ", ""))
+                  s.send_message(msg)
+          except smtplib.SMTPAuthenticationError as e:
+              fail(f"Gmail rejected the login ({e.smtp_code}). Check GMAIL_USERNAME is the full address and GMAIL_APP_PASSWORD is a current app password.")
+          except Exception as e:
+              fail(f"{type(e).__name__}: {e}")
+          print(f"::notice title=Pulse sent::{path} to {os.environ['GITHUB_REF_NAME']}")
           print(f"Sent {path} ({len(data):,} bytes) on {os.environ['GITHUB_REF_NAME']}")
           PY
 
