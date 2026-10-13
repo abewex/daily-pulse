@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Send PDF over Gmail SMTP
+      - name: Send PDF over SMTP (Gmail or iCloud, picked from the sender address)
         env:
           GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
@@ -60,20 +60,25 @@ jobs:
 
           user = os.environ["GMAIL_USERNAME"].strip()
           pw = "".join(os.environ["GMAIL_APP_PASSWORD"].split())  # drops any whitespace, incl. non-breaking spaces from phone copy/paste
+          domain = user.split("@")[-1].lower()
+          if domain in ("icloud.com", "me.com", "mac.com"):
+              HOST, PORTS = "smtp.mail.me.com", (587,)          # iCloud: STARTTLS on 587 only
+          else:
+              HOST, PORTS = "smtp.gmail.com", (465, 587)
 
           def shape(v):
               # Safe diagnostics: never prints the value itself.
-              return (f"len={len(v)}, ascii={v.isascii()}, letters_only={v.isalpha()}, lowercase={v == v.lower()}")
+              return (f"len={len(v)}, ascii={v.isascii()}, letters_only={v.isalpha()}, dashes={v.count('-')}, lowercase={v == v.lower()}")
           print(f"::notice title=Credential shape::username: len={len(user)} domain={user.split('@')[-1] if '@' in user else 'NO @'} "
-                f"ascii={user.isascii()} | app password: {shape(pw)} (expect len=16, letters only)")
+                f"ascii={user.isascii()} | app password: {shape(pw)} (Gmail expects len=16 letters; iCloud expects len=19 with 3 dashes) | server={HOST}")
 
           def send(port):
               phase = "connect"
               try:
                   if port == 465:
-                      s = smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=60)
+                      s = smtplib.SMTP_SSL(HOST, 465, context=ssl.create_default_context(), timeout=60)
                   else:
-                      s = smtplib.SMTP("smtp.gmail.com", 587, timeout=60)
+                      s = smtplib.SMTP(HOST, 587, timeout=60)
                       phase = "starttls"; s.ehlo(); s.starttls(context=ssl.create_default_context())
                   with s:
                       phase = "ehlo"; s.ehlo()
@@ -96,12 +101,12 @@ jobs:
                       phase = "send"; s.send_message(msg)
                   return None
               except smtplib.SMTPAuthenticationError as e:
-                  fail(f"Gmail rejected the login ({e.smtp_code}). Check GMAIL_USERNAME is the full address and GMAIL_APP_PASSWORD is a current app password.")
+                  fail(f"{HOST} rejected the login ({e.smtp_code}). Check GMAIL_USERNAME is the full sender address and GMAIL_APP_PASSWORD is a current app(-specific) password.")
               except Exception as e:
                   return f"port {port}, during {phase}: {type(e).__name__}: {e}"
 
           errors = []
-          for port in (465, 587):
+          for port in PORTS:
               err = send(port)
               if err is None:
                   break

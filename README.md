@@ -6,4 +6,4 @@ Builds "Abe's Daily Pulse" (14-page, 3.6x4.8" Kindle PDF) and emails it to Kindl
 - `RUNBOOK.md` - what the 7am Claude scheduled task does each morning.
 - `.github/workflows/send-to-kindle.yml` - emails the PDF when it's pushed to the `outbox` branch (or `outbox-test` for tests), then deletes the branch.
 
-Repo secrets (Settings > Secrets and variables > Actions): `GMAIL_USERNAME`, `GMAIL_APP_PASSWORD`, `KINDLE_EMAIL`, optional `TEST_EMAIL` (defaults to `GMAIL_USERNAME`).
+Repo secrets (Settings > Secrets and variables > Actions): `GMAIL_USERNAME` (sender address - Gmail or iCloud; the server is picked from the domain), `GMAIL_APP_PASSWORD` (app or app-specific password), `KINDLE_EMAIL`, optional `TEST_EMAIL` (defaults to the sender).
