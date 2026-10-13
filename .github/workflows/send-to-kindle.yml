@@ -58,14 +58,36 @@ jobs:
           msg.set_content("The Pulse is attached.")
           msg.add_attachment(data, maintype="application", subtype="pdf", filename=os.path.basename(path))
 
-          try:
-              with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as s:
-                  s.login(os.environ["GMAIL_USERNAME"], os.environ["GMAIL_APP_PASSWORD"].replace(" ", ""))
-                  s.send_message(msg)
-          except smtplib.SMTPAuthenticationError as e:
-              fail(f"Gmail rejected the login ({e.smtp_code}). Check GMAIL_USERNAME is the full address and GMAIL_APP_PASSWORD is a current app password.")
-          except Exception as e:
-              fail(f"{type(e).__name__}: {e}")
+          user = os.environ["GMAIL_USERNAME"].strip()
+          pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
+
+          def send(port):
+              phase = "connect"
+              try:
+                  if port == 465:
+                      s = smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=60)
+                  else:
+                      s = smtplib.SMTP("smtp.gmail.com", 587, timeout=60)
+                      phase = "starttls"; s.ehlo(); s.starttls(context=ssl.create_default_context())
+                  with s:
+                      phase = "ehlo"; s.ehlo()
+                      phase = "login"; s.login(user, pw)
+                      phase = "send"; s.send_message(msg)
+                  return None
+              except smtplib.SMTPAuthenticationError as e:
+                  fail(f"Gmail rejected the login ({e.smtp_code}). Check GMAIL_USERNAME is the full address and GMAIL_APP_PASSWORD is a current app password.")
+              except Exception as e:
+                  return f"port {port}, during {phase}: {type(e).__name__}: {e}"
+
+          errors = []
+          for port in (465, 587):
+              err = send(port)
+              if err is None:
+                  break
+              errors.append(err)
+              print(f"::warning title=SMTP attempt failed::{err}")
+          else:
+              fail(" | ".join(errors))
           print(f"::notice title=Pulse sent::{path} to {os.environ['GITHUB_REF_NAME']}")
           print(f"Sent {path} ({len(data):,} bytes) on {os.environ['GITHUB_REF_NAME']}")
           PY
