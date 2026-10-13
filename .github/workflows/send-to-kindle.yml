@@ -59,7 +59,13 @@ jobs:
           msg.add_attachment(data, maintype="application", subtype="pdf", filename=os.path.basename(path))
 
           user = os.environ["GMAIL_USERNAME"].strip()
-          pw = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "").strip()
+          pw = "".join(os.environ["GMAIL_APP_PASSWORD"].split())  # drops any whitespace, incl. non-breaking spaces from phone copy/paste
+
+          def shape(v):
+              # Safe diagnostics: never prints the value itself.
+              return (f"len={len(v)}, ascii={v.isascii()}, letters_only={v.isalpha()}, lowercase={v == v.lower()}")
+          print(f"::notice title=Credential shape::username: len={len(user)} domain={user.split('@')[-1] if '@' in user else 'NO @'} "
+                f"ascii={user.isascii()} | app password: {shape(pw)} (expect len=16, letters only)")
 
           def send(port):
               phase = "connect"
