@@ -1,0 +1,64 @@
+name: Send Pulse to Kindle
+
+# The 7am Claude run pushes a single PDF to a throwaway branch:
+#   outbox       -> emails KINDLE_EMAIL
+#   outbox-test  -> emails TEST_EMAIL (use this for any testing; Kindle docs can't be deleted)
+# After a successful send the branch is deleted, so PDFs don't pile up in the repo.
+
+on:
+  push:
+    branches: [outbox, outbox-test]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pulse-send
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Send PDF over Gmail SMTP
+        env:
+          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          TO_ADDR: ${{ github.ref_name == 'outbox' && secrets.KINDLE_EMAIL || secrets.TEST_EMAIL }}
+        run: |
+          python3 - <<'PY'
+          import glob, os, smtplib, ssl, sys
+          from email.message import EmailMessage
+
+          for k in ("GMAIL_USERNAME", "GMAIL_APP_PASSWORD", "TO_ADDR"):
+              if not os.environ.get(k):
+                  sys.exit(f"Missing secret for {k} - add it under Settings > Secrets and variables > Actions")
+
+          pdfs = sorted(glob.glob("Abes_Daily_Pulse_*.pdf"))
+          if len(pdfs) != 1:
+              sys.exit(f"Expected exactly one Abes_Daily_Pulse_*.pdf, found {pdfs}")
+          path = pdfs[0]
+          data = open(path, "rb").read()
+          if not data.startswith(b"%PDF") or len(data) < 10_000:
+              sys.exit(f"{path} doesn't look like a valid PDF ({len(data)} bytes)")
+
+          msg = EmailMessage()
+          msg["From"] = os.environ["GMAIL_USERNAME"]
+          msg["To"] = os.environ["TO_ADDR"]
+          # No "convert" in the subject: keeps Kindle from reflowing the fixed layout.
+          msg["Subject"] = path.removesuffix(".pdf").replace("_", " ")
+          msg.set_content("The Pulse is attached.")
+          msg.add_attachment(data, maintype="application", subtype="pdf", filename=os.path.basename(path))
+
+          with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as s:
+              s.login(os.environ["GMAIL_USERNAME"], os.environ["GMAIL_APP_PASSWORD"])
+              s.send_message(msg)
+          print(f"Sent {path} ({len(data):,} bytes) on {os.environ['GITHUB_REF_NAME']}")
+          PY
+
+      - name: Delete the outbox branch
+        if: success()
+        run: git push origin --delete "${GITHUB_REF_NAME}"

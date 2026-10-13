@@ -1,0 +1,243 @@
+{
+ "date": "2026-01-14",
+ "dateline": "New York",
+ "benchmark_monthly": 5000,
+ "as_of_note": "SAMPLE DATA - all figures are fictional.",
+ "balances": {
+  "2025-11-30": {
+   "Checking": 12000,
+   "Savings": 5000,
+   "Card A": -1500,
+   "401(k)": 40000,
+   "Roth IRA": 30000,
+   "Security Deposit": 2000,
+   "Student Loan": -15000
+  },
+  "2025-12-31": {
+   "Checking": 13000,
+   "Savings": 5000,
+   "Card A": -2100,
+   "401(k)": 41000,
+   "Roth IRA": 30500,
+   "Security Deposit": 2000,
+   "Student Loan": -14800
+  },
+  "2026-01-14": {
+   "Checking": 10500,
+   "Savings": 5050,
+   "Card A": -1800,
+   "401(k)": 41800,
+   "Roth IRA": 31000,
+   "Security Deposit": 2000,
+   "Student Loan": -14800
+  }
+ },
+ "groups": {
+  "cash": [
+   "Checking",
+   "Savings"
+  ],
+  "cards": [
+   "Card A"
+  ],
+  "retirement": [
+   "401(k)",
+   "Roth IRA"
+  ],
+  "other_assets": [
+   "Security Deposit"
+  ],
+  "loans": [
+   "Student Loan"
+  ]
+ },
+ "expenses_mtd": [
+  [
+   "2026-01-02",
+   "Rent",
+   -2000
+  ],
+  [
+   "2026-01-05",
+   "Groceries",
+   -120.5
+  ],
+  [
+   "2026-01-09",
+   "Dining Out",
+   -64.2
+  ],
+  [
+   "2026-01-10",
+   "Dining Out",
+   30.0
+  ]
+ ],
+ "expenses_prev_month": [
+  [
+   "2025-12-02",
+   "Rent",
+   -2000
+  ],
+  [
+   "2025-12-12",
+   "Groceries",
+   -410
+  ],
+  [
+   "2025-12-20",
+   "Travel",
+   -650
+  ],
+  [
+   "2025-12-24",
+   "Gifts",
+   -300
+  ]
+ ],
+ "income_prev_month": {
+  "Net wages": 5200,
+  "401(k) contributions": 1000
+ },
+ "uncategorized_mtd": [
+  [
+   "Restaurant 1/12",
+   -180.0,
+   "2026-01-12"
+  ]
+ ],
+ "uncategorized_offsets": [
+  [
+   "Venmo: dinner split",
+   90.0
+  ]
+ ],
+ "cash_view_prev_month": [
+  [
+   "Net wages",
+   5200
+  ],
+  [
+   "Less: net categorized spend",
+   -3360
+  ],
+  [
+   "Less: Roth IRA transfer",
+   -500
+  ]
+ ],
+ "narrative": {
+  "delta": [
+   {
+    "type": "bullet",
+    "text": "<b>Yields:</b> sample bullet. <a href=\"https://example.com\" color=\"#1a4b8c\"><u>src</u></a>"
+   },
+   {
+    "type": "bullet",
+    "text": "<b>Apple leak:</b> sample bullet."
+   }
+  ],
+  "auditor_callouts": [
+   {
+    "type": "bullet",
+    "text": "Sample callout."
+   }
+  ],
+  "markets": [
+   {
+    "type": "table",
+    "rows": [
+     [
+      "Index",
+      "Close",
+      "Day"
+     ],
+     [
+      "S&P 500",
+      "6,000.00",
+      "+0.5%"
+     ]
+    ],
+    "widths": [
+     0.5,
+     0.3,
+     0.2
+    ]
+   },
+   {
+    "type": "h2",
+    "text": "What moved"
+   },
+   {
+    "type": "bullet",
+    "text": "Sample."
+   }
+  ],
+  "rates": [
+   {
+    "type": "p",
+    "text": "Sample."
+   },
+   {
+    "type": "h2",
+    "text": "Bond Literacy"
+   },
+   {
+    "type": "p",
+    "text": "Sample."
+   }
+  ],
+  "tech_apple": [
+   {
+    "type": "p",
+    "text": "Sample."
+   }
+  ],
+  "industry": [
+   {
+    "type": "h2",
+    "text": "HFT / market structure"
+   },
+   {
+    "type": "bullet",
+    "text": "Sample."
+   },
+   {
+    "type": "h2",
+    "text": "CPA / accounting"
+   },
+   {
+    "type": "bullet",
+    "text": "Sample."
+   }
+  ],
+  "nyc": [
+   {
+    "type": "bullet",
+    "text": "Sample."
+   }
+  ],
+  "commute_reads": [
+   {
+    "type": "h2",
+    "text": "1. Sample read"
+   },
+   {
+    "type": "p",
+    "text": "Why it matters: sample."
+   }
+  ],
+  "audit_flags": [
+   {
+    "type": "bullet",
+    "text": "Sample flag."
+   }
+  ],
+  "methodology": [
+   {
+    "type": "bullet",
+    "text": "Sample limitation."
+   }
+  ]
+ }
+}

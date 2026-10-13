@@ -1,0 +1,4 @@
+*.pdf
+data*.json
+out/
+__pycache__/
