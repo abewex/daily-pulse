@@ -27,7 +27,8 @@ jobs:
         env:
           GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          TO_ADDR: ${{ github.ref_name == 'outbox' && secrets.KINDLE_EMAIL || secrets.TEST_EMAIL || secrets.GMAIL_USERNAME }}
+          KINDLE_EMAIL: ${{ secrets.KINDLE_EMAIL }}
+          TEST_ADDR: ${{ secrets.TEST_EMAIL || secrets.GMAIL_USERNAME }}
         run: |
           python3 - <<'PY'
           import glob, os, smtplib, ssl, sys
@@ -38,9 +39,15 @@ jobs:
               print(f"::error title=Pulse send failed::{msg}")
               sys.exit(1)
 
-          for k in ("GMAIL_USERNAME", "GMAIL_APP_PASSWORD", "TO_ADDR"):
+          # Real sends go ONLY to KINDLE_EMAIL - never fall back to another address.
+          is_kindle = os.environ["GITHUB_REF_NAME"] == "outbox"
+          to_key = "KINDLE_EMAIL" if is_kindle else "TEST_ADDR"
+          for k in ("GMAIL_USERNAME", "GMAIL_APP_PASSWORD", to_key):
               if not os.environ.get(k):
                   fail(f"Missing secret {k} - add it under Settings > Secrets and variables > Actions")
+          to_addr = os.environ[to_key].strip()
+          if is_kindle and not to_addr.lower().endswith("@kindle.com"):
+              fail("KINDLE_EMAIL doesn't end in @kindle.com - refusing to send the brief elsewhere")
 
           pdfs = sorted(glob.glob("Abes_Daily_Pulse_*.pdf"))
           if len(pdfs) != 1:
@@ -52,7 +59,7 @@ jobs:
 
           msg = EmailMessage()
           msg["From"] = os.environ["GMAIL_USERNAME"]
-          msg["To"] = os.environ["TO_ADDR"]
+          msg["To"] = to_addr
           # No "convert" in the subject: keeps Kindle from reflowing the fixed layout.
           msg["Subject"] = path.removesuffix(".pdf").replace("_", " ")
           msg.set_content("The Pulse is attached.")
@@ -114,7 +121,7 @@ jobs:
               print(f"::warning title=SMTP attempt failed::{err}")
           else:
               fail(" | ".join(errors))
-          print(f"::notice title=Pulse sent::{path} to {os.environ['GITHUB_REF_NAME']}")
+          print(f"::notice title=Pulse sent::{path} on {os.environ['GITHUB_REF_NAME']} to ...{to_addr.split('@')[-1]}")
           print(f"Sent {path} ({len(data):,} bytes) on {os.environ['GITHUB_REF_NAME']}")
           PY
 
