@@ -3,7 +3,7 @@ name: Send Pulse to Kindle
 # The 7am Claude run pushes a single PDF to a throwaway branch:
 #   outbox       -> emails KINDLE_EMAIL
 #   outbox-test  -> emails TEST_EMAIL, or GMAIL_USERNAME if unset (use this for any testing; Kindle docs can't be deleted)
-# After a successful send the branch is deleted, so PDFs don't pile up in the repo.
+# The branch is deleted after every attempt, so PDFs don't pile up and a failure can't block the next run.
 
 on:
   push:
@@ -113,6 +113,8 @@ jobs:
           print(f"Sent {path} ({len(data):,} bytes) on {os.environ['GITHUB_REF_NAME']}")
           PY
 
+      # Always clear the branch so a failed send can't block the next morning's run.
+      # The scheduled run also hands Abe the PDF directly, so nothing is lost on failure.
       - name: Delete the outbox branch
-        if: success()
+        if: always()
         run: git push origin --delete "${GITHUB_REF_NAME}"

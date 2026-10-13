@@ -47,4 +47,4 @@ git checkout main && git branch -D outbox && rm -f Abes_Daily_Pulse_*.pdf
 ```
 Use branch `outbox-test` instead of `outbox` for any test (goes to TEST_EMAIL, not the Kindle).
 
-Then watch the "Send Pulse to Kindle" Actions run (`gh api repos/abewex/daily-pulse/actions/runs?per_page=1`). Job logs aren't readable from the session; read the reason from the job's check-run annotations (`gh api repos/abewex/daily-pulse/check-runs/<job id>/annotations`). This session can't delete remote branches; the workflow deletes `outbox` itself after a successful send. Report success or the failure reason in one line, and send the PDF to Abe in the conversation either way.
+Then watch the "Send Pulse to Kindle" Actions run (`gh api repos/abewex/daily-pulse/actions/runs?per_page=1`). Job logs aren't readable from the session; read the reason from the job's check-run annotations (`gh api repos/abewex/daily-pulse/check-runs/<job id>/annotations`). This session can't delete remote branches; the workflow deletes `outbox` itself after every attempt, success or failure. Report success or the failure reason in one line, and send the PDF to Abe in the conversation either way.
