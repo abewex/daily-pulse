@@ -77,7 +77,22 @@ jobs:
                       phase = "starttls"; s.ehlo(); s.starttls(context=ssl.create_default_context())
                   with s:
                       phase = "ehlo"; s.ehlo()
-                      phase = "login"; s.login(user, pw)
+                      phase = "login"
+                      import base64
+                      trail = []
+                      def step(name, cmd):
+                          code, resp = s.docmd(cmd)
+                          # Gmail's replies only - the commands carry credentials and are never printed.
+                          trail.append(f"{name}->{code} {resp.decode(errors='replace')[:80]}")
+                          return code
+                      try:
+                          ok = (step("AUTH LOGIN", "AUTH LOGIN") == 334
+                                and step("user", base64.b64encode(user.encode()).decode()) == 334
+                                and step("pass", base64.b64encode(pw.encode()).decode()) == 235)
+                      finally:
+                          print(f"::notice title=SMTP auth trail (port {port})::{' | '.join(trail) or 'no reply'}")
+                      if not ok:
+                          raise smtplib.SMTPAuthenticationError(535, trail[-1] if trail else "no reply")
                       phase = "send"; s.send_message(msg)
                   return None
               except smtplib.SMTPAuthenticationError as e:
