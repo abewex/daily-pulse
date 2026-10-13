@@ -130,7 +130,7 @@
   "delta": [
    {
     "type": "bullet",
-    "text": "<b>Yields:</b> sample bullet. <a href=\"https://example.com\" color=\"#1a4b8c\"><u>src</u></a>"
+    "text": "<b>Yields:</b> sample bullet. (Treasury)"
    },
    {
     "type": "bullet",
@@ -170,7 +170,7 @@
    },
    {
     "type": "bullet",
-    "text": "Sample."
+    "text": "Sample story with the outlet named in plain text. (Reuters)"
    }
   ],
   "rates": [
@@ -220,11 +220,23 @@
   "commute_reads": [
    {
     "type": "h2",
-    "text": "1. Sample read"
+    "text": "1. Sample read headline"
+   },
+   {
+    "type": "note",
+    "text": "Federal Reserve - Gov. Example, speech, Jan 13"
+   },
+   {
+    "type": "read",
+    "text": "Long-form paragraph text goes here (verbatim only for public-domain government sources)."
+   },
+   {
+    "type": "quote",
+    "text": "An excerpted passage from a public-domain speech."
    },
    {
     "type": "p",
-    "text": "Why it matters: sample."
+    "text": "<b>Why it matters:</b> sample."
    }
   ],
   "audit_flags": [
@@ -239,5 +251,15 @@
     "text": "Sample limitation."
    }
   ]
- }
+ },
+ "sources": [
+  [
+   "Treasury - daily yield curve",
+   "https://home.treasury.gov/"
+  ],
+  [
+   "Reuters - sample story",
+   "https://www.reuters.com/"
+  ]
+ ]
 }

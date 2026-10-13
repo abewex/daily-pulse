@@ -9,7 +9,8 @@ from collections import defaultdict
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import Paragraph, Frame, KeepInFrame, Table, TableStyle, Spacer
+from reportlab.platypus import Paragraph, Frame, Table, TableStyle, Spacer, Flowable, PageBreak, NextPageTemplate
+from reportlab.platypus.doctemplate import BaseDocTemplate, PageTemplate
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing, Line, String, PolyLine
 from reportlab.graphics import renderPDF
@@ -21,18 +22,20 @@ INK = colors.HexColor("#111111"); GREY = colors.HexColor("#555555"); RULE = colo
 LINK = "#1a4b8c"
 
 ST = {
- "h2": ParagraphStyle("h2", fontName="Times-Bold", fontSize=7.6, leading=9, spaceBefore=3, spaceAfter=1),
- "p": ParagraphStyle("p", fontName="Times-Roman", fontSize=6.6, leading=7.9, spaceAfter=2),
- "note": ParagraphStyle("note", fontName="Times-Italic", fontSize=5.6, leading=6.6, textColor=GREY, spaceAfter=1),
- "bullet": ParagraphStyle("bullet", fontName="Times-Roman", fontSize=6.6, leading=7.9, leftIndent=6, bulletIndent=0, spaceAfter=1.5),
+ "h2": ParagraphStyle("h2", fontName="Times-Bold", fontSize=8.6, leading=10.2, spaceBefore=3, spaceAfter=1),
+ "p": ParagraphStyle("p", fontName="Times-Roman", fontSize=7.6, leading=9.1, spaceAfter=2.5),
+ "note": ParagraphStyle("note", fontName="Times-Italic", fontSize=6.4, leading=7.6, textColor=GREY, spaceAfter=1.5),
+ "bullet": ParagraphStyle("bullet", fontName="Times-Roman", fontSize=7.6, leading=9.1, leftIndent=7, bulletIndent=0, spaceAfter=2),
+ "read": ParagraphStyle("read", fontName="Times-Roman", fontSize=7.6, leading=9.4, spaceAfter=3, firstLineIndent=8),
+ "quote": ParagraphStyle("quote", fontName="Times-Italic", fontSize=7.6, leading=9.4, leftIndent=8, rightIndent=4, spaceAfter=3),
 }
 SECTIONS = ["Cover", "Your Money", "Markets", "Rates & Bonds", "Tech & Apple", "Industry", "NYC", "Commute Reads",
             "App: Balance Sheet", "App: Income & Cash Flow", "App: Spend & Audit", "Chart: Net Worth",
             "Chart: Spend Pace", "Methodology"]
-TITLES = {2: "Your Money", 3: "Markets", 4: "Rates & Bonds", 5: "Tech & Apple Rumor Mill", 6: "Industry & Profession",
+TITLES = {1: "Cover", 2: "Your Money", 3: "Markets", 4: "Rates & Bonds", 5: "Tech & Apple Rumor Mill", 6: "Industry & Profession",
           7: "NYC", 8: "Commute Reads", 9: "Appendix A — Balance Sheet", 10: "Appendix B — Income & Cash Flow",
           11: "Appendix C — Spend & Audit Flags", 12: "Chart — Net Worth Trend",
-          13: "Chart — Spend Pace vs Target", 14: "Methodology & Notes"}
+          13: "Chart — Spend Pace vs Target", 14: "Methodology & Sources"}
 
 
 GLYPHS = {"\u0394": "Chg ", "\u2212": "-", "\u2248": "~", "\u2009": " "}
@@ -66,14 +69,14 @@ def tbl(rows, widths, bold_last=False, right_cols=None):
     if right_cols is None:
         right_cols = num_cols(rows)
     t = Table(rows, colWidths=widths)
-    sty = [("FONT", (0, 0), (-1, -1), "Helvetica", 5.6), ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 5.6),
-           ("LEADING", (0, 0), (-1, -1), 6.4), ("TOPPADDING", (0, 0), (-1, -1), 0.6), ("BOTTOMPADDING", (0, 0), (-1, -1), 0.6),
+    sty = [("FONT", (0, 0), (-1, -1), "Helvetica", 6.4), ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 6.4),
+           ("LEADING", (0, 0), (-1, -1), 7.4), ("TOPPADDING", (0, 0), (-1, -1), 0.6), ("BOTTOMPADDING", (0, 0), (-1, -1), 0.6),
            ("LEFTPADDING", (0, 0), (-1, -1), 1), ("RIGHTPADDING", (0, 0), (-1, -1), 1), ("LINEBELOW", (0, 0), (-1, 0), 0.4, INK)]
     for c in right_cols:
         if c < len(widths):
             sty.append(("ALIGN", (c, 0), (c, -1), "RIGHT"))
     if bold_last:
-        sty += [("FONT", (0, -1), (-1, -1), "Helvetica-Bold", 5.6), ("LINEABOVE", (0, -1), (-1, -1), 0.4, INK)]
+        sty += [("FONT", (0, -1), (-1, -1), "Helvetica-Bold", 6.4), ("LINEABOVE", (0, -1), (-1, -1), 0.4, INK)]
     t.setStyle(TableStyle(sty))
     return t
 
@@ -145,10 +148,10 @@ def build(data, out_dir):
     pages = {}
     # 1 Cover
     grid = Table([["NET WORTH", "LIQUID CASH"], [f(NW1), f(CASH1)], ["CARDS OWED", "MTD SPEND"], [f(CARDS1), f(all_in)]], colWidths=[CW/2]*2)
-    grid.setStyle(TableStyle([("FONT", (0, 0), (-1, -1), "Helvetica", 5.4), ("FONT", (0, 1), (-1, 1), "Times-Bold", 11),
-        ("FONT", (0, 3), (-1, 3), "Times-Bold", 11), ("ALIGN", (0, 0), (-1, -1), "CENTER"), ("BOX", (0, 0), (-1, -1), 0.5, INK),
+    grid.setStyle(TableStyle([("FONT", (0, 0), (-1, -1), "Helvetica", 6.2), ("FONT", (0, 1), (-1, 1), "Times-Bold", 12),
+        ("FONT", (0, 3), (-1, 3), "Times-Bold", 12), ("ALIGN", (0, 0), (-1, -1), "CENTER"), ("BOX", (0, 0), (-1, -1), 0.5, INK),
         ("INNERGRID", (0, 0), (-1, -1), 0.25, RULE), ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 1.5)]))
-    toc = " &middot; ".join(f'<link dest="p{i}" color="{LINK}">{i}&nbsp;{n}</link>' for i, n in enumerate(SECTIONS[1:], start=2))
+    toc = " &middot; ".join(f'<link dest="p{i}" color="{LINK}">{n}</link>' for i, n in enumerate(SECTIONS[1:], start=2))
     pace_bullet = (f"<b>Spend pace:</b> MTD {f(all_in)} through day {DAY}/{DAYS} runs {fs(all_in-pro)} vs pro-rata benchmark ({f(pro)}); "
                    f"straight-line month-end {f(pace)} vs {f(BENCH)}." + (" Rent is front-loaded, so the run-rate overstates." if rent and DAY < 15 else ""))
     pages[1] = [P("<b>Subway Delta</b>", "h2"), B(pace_bullet)] + blocks_to_flow(N.get("delta", [])[:2]) + [
@@ -208,7 +211,10 @@ def build(data, out_dir):
     method = [B("Source of record: WealthPosition ledger via read-only queries. No writes made."),
               B(f"Spend = expenditure entries net of reimbursements, plus uncategorized card charges less matched offsets. Pace = MTD ÷ {DAY} × {DAYS}; benchmark {f(BENCH)}/mo."),
               B("Granularity: MoM and MTD only. Net-worth 'other' line is the residual after cash, retirement and cards.")]
-    pages[14] = method + blocks_to_flow(N.get("methodology", [])) + [B(f"Built {d1} by Claude. Not investment advice.")]
+    srcs = D.get("sources", [])   # [[label, url], ...] - links live here instead of inline
+    src_flow = ([P("<b>Sources</b>", "h2")] +
+                [Paragraph(f'{clean(l)} <a href="{u}" color="{LINK}"><u>link</u></a>', ST["note"], bulletText="\u2022") for l, u in srcs]) if srcs else []
+    pages[14] = method + blocks_to_flow(N.get("methodology", [])) + [B(f"Built {d1} by Claude. Not investment advice.")] + src_flow
 
     # -------- charts --------
     def chart_nw(c, x, y, w, h):
@@ -253,48 +259,89 @@ def build(data, out_dir):
         g.add(String(X(DAY), Y(all_in)+4, f"MTD {f(all_in)}", fontName="Helvetica-Bold", fontSize=5.5, textAnchor="middle"))
         renderPDF.draw(g, c, x, y)
 
-    # -------- render --------
+    # -------- render: sections flow onto "(cont.)" pages instead of shrinking --------
     fname = f"Abes_Daily_Pulse_{date.strftime('%b')}_{date.day:02d}.pdf"
     out = os.path.join(out_dir, fname)
-    c = canvas.Canvas(out, pagesize=(W, H), pageCompression=1)
-    c.setTitle(f"Abe's Daily Pulse — {date.strftime('%b')} {date.day}, {date.year}"); c.setAuthor("Claude")
-    NP = 14
-    for i in range(1, NP+1):
-        c.bookmarkPage(f"p{i}"); c.addOutlineEntry(SECTIONS[i-1], f"p{i}", 0)
+    TOP_BODY, TOP_COVER, BOTTOM = H-M-25, H-M-40, M+9
+
+    class Marker(Flowable):
+        def __init__(self, idx): super().__init__(); self.idx = idx
+        def wrap(self, aw, ah): return (0, 0)
+        def draw(self):
+            doc = self.canv._doctemplate
+            doc.sec, doc.sec_page = self.idx, self.canv.getPageNumber()
+            self.canv.bookmarkPage(f"p{self.idx}"); self.canv.addOutlineEntry(SECTIONS[self.idx-1], f"p{self.idx}", 0)
+
+    class Chart(Flowable):
+        def __init__(self, fn, h): super().__init__(); self.fn, self.h = fn, h
+        def wrap(self, aw, ah): self.w = aw; return (aw, self.h)
+        def draw(self): self.fn(self.canv, 0, 0, self.w, self.h)
+
+    chart_h = TOP_BODY - BOTTOM - 40
+    pages[12] = [Chart(chart_nw, chart_h), P(f"Month-end net worth from ledger balances; {mon(d1)} is MTD.", "note")]
+    pages[13] = [Chart(chart_sp, chart_h), P(f"Solid: cumulative spend (endpoint {f(all_in)} exact). Dashed: straight-line {f(BENCH)} target.", "note")]
+
+    def story():
+        s = []
+        for i in range(1, 15):
+            if i == 2:
+                s.append(NextPageTemplate("body"))
+            if i > 1:
+                s.append(PageBreak())
+            s.append(Marker(i))
+            s.extend(pages[i])
+        return s
+
+    def chrome(c, doc):
+        n, total = c.getPageNumber(), max(doc.total, c.getPageNumber())
         ty = H-M-6
+        c.saveState()
         c.setStrokeColor(INK); c.setLineWidth(0.6); c.line(M+4, ty, W-M-4, ty)
-        for k in range(NP):
-            sx = M+4 + k*(W-2*M-8)/(NP-1)
-            c.setFillColor(INK if k < i else colors.white); c.circle(sx, ty, 1.3, stroke=1, fill=1)
-        tx = M+4 + (i-1)*(W-2*M-8)/(NP-1)
+        for k in range(total):
+            sx = M+4 + k*(W-2*M-8)/max(total-1, 1)
+            c.setFillColor(INK if k < n else colors.white); c.circle(sx, ty, 1.3, stroke=1, fill=1)
+        tx = M+4 + (n-1)*(W-2*M-8)/max(total-1, 1)
         c.setFillColor(INK); c.roundRect(tx-7, ty-2.6, 14, 5.2, 1.5, stroke=0, fill=1)
-        c.setFillColor(colors.white); c.setFont("Helvetica-Bold", 4); c.drawCentredString(tx, ty-1.3, str(i)); c.setFillColor(INK)
-        if i == 1:
+        c.setFillColor(colors.white); c.setFont("Helvetica-Bold", 4); c.drawCentredString(tx, ty-1.3, str(n)); c.setFillColor(INK)
+        if n == 1:
             c.setFont("Times-Bold", 17); c.drawCentredString(W/2, H-M-26, "Abe's Daily Pulse")
-            c.setFont("Times-Italic", 6.2); c.drawCentredString(W/2, H-M-34, f"{date.strftime('%A, %B')} {date.day}, {date.year}  ·  {D.get('dateline', 'New York')}")
+            c.setFont("Times-Italic", 6.6); c.drawCentredString(W/2, H-M-34, f"{date.strftime('%A, %B')} {date.day}, {date.year}  \u00b7  {D.get('dateline', 'New York')}")
             c.setLineWidth(0.8); c.line(M, H-M-37, W-M, H-M-37); c.setLineWidth(0.3); c.line(M, H-M-38.5, W-M, H-M-38.5)
-            top = H-M-40
         else:
-            c.setFont("Times-Bold", 10.5); c.drawString(M, H-M-20, TITLES[i])
-            c.setFont("Helvetica", 5); c.drawRightString(W-M, H-M-20, f"{i}/{NP}")
-            c.setLineWidth(0.5); c.line(M, H-M-23, W-M, H-M-23); top = H-M-25
-        bottom = M+9
-        content = pages[i]
-        if content in ("NW", "SP"):
-            (chart_nw if content == "NW" else chart_sp)(c, M, bottom+40, CW, top-bottom-50)
-            cap = (f"Month-end net worth from ledger balances; {mon(d1)} is MTD." if content == "NW" else
-                   f"Solid: cumulative spend (endpoint {f(all_in)} exact). Dashed: straight-line {f(BENCH)} target.")
-            Frame(M, bottom, CW, 40, 0, 0, 0, 0).addFromList([P(cap, "note")], c)
-        else:
-            Frame(M, bottom, CW, top-bottom, 0, 0, 0, 0).addFromList([KeepInFrame(CW, top-bottom, content, mode="shrink")], c)
+            title = TITLES[doc.sec] + ("" if doc.sec_page == n else " (cont.)")
+            c.setFont("Times-Bold", 11.5); c.drawString(M, H-M-20, title)
+            c.setFont("Helvetica", 5.6); c.drawRightString(W-M, H-M-20, f"{n}/{total}")
+            c.setLineWidth(0.5); c.line(M, H-M-23, W-M, H-M-23)
         c.setLineWidth(0.3); c.line(M, M+7, W-M, M+7)
-        if i > 1:
-            c.setFont("Helvetica", 5.2); c.setFillColor(colors.HexColor(LINK)); c.drawString(M, M+1.5, "‹ Home")
-            c.linkRect("", "p1", (M, M, M+22, M+7), relative=0); c.setFillColor(INK)
-        c.setFont("Helvetica", 4.6); c.drawRightString(W-M, M+1.5, f"The Pulse · {date.strftime('%b')} {date.day}, {date.year}")
-        c.showPage()
-    c.save()
-    return out, {"net_worth": round(NW1, 2), "cash": round(CASH1, 2), "cards": round(CARDS1, 2), "mtd_all_in": round(all_in, 2), "pages": NP}
+        if n > 1:
+            c.setFont("Helvetica", 5.8); c.setFillColor(colors.HexColor(LINK)); c.drawString(M, M+1.5, "\u2039 Home")
+            c.linkRect("", "p1", (M, M, M+24, M+7), relative=0); c.setFillColor(INK)
+        c.setFont("Helvetica", 5.2); c.drawRightString(W-M, M+1.5, f"The Pulse \u00b7 {date.strftime('%b')} {date.day}, {date.year}")
+        c.restoreState()
+        fr = doc.frame
+        doc.fills.append((n, doc.sec, round((fr._y1 + fr._height - fr._y) / fr._height, 2)))
+
+    def render(path, total):
+        doc = BaseDocTemplate(path, pagesize=(W, H), leftMargin=M, rightMargin=M, topMargin=M, bottomMargin=M,
+                              title=f"Abe's Daily Pulse \u2014 {date.strftime('%b')} {date.day}, {date.year}", author="Claude",
+                              pageCompression=1)
+        doc.total, doc.sec, doc.sec_page, doc.fills = total, 1, 1, []
+        doc.addPageTemplates([
+            PageTemplate("cover", [Frame(M, BOTTOM, CW, TOP_COVER-BOTTOM, 0, 0, 0, 0, id="c")], onPageEnd=chrome),
+            PageTemplate("body", [Frame(M, BOTTOM, CW, TOP_BODY-BOTTOM, 0, 0, 0, 0, id="b")], onPageEnd=chrome)])
+        doc.build(story())
+        return doc
+
+    first = render(out, 0)                       # pass 1: learn the page count
+    total = len(first.fills)
+    doc = render(out, total)                     # pass 2: subway header knows the total
+    # Fill of each section's LAST page: low numbers mean white space to fill with substance.
+    last = {}
+    for n, sec, fill in doc.fills:
+        last[sec] = (n, fill)
+    fills = {SECTIONS[s-1]: {"page": n, "last_page_fill": fl} for s, (n, fl) in sorted(last.items())}
+    return out, {"net_worth": round(NW1, 2), "cash": round(CASH1, 2), "cards": round(CARDS1, 2),
+                 "mtd_all_in": round(all_in, 2), "pages": total, "section_fill": fills}
 
 
 if __name__ == "__main__":

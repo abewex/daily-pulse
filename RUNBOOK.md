@@ -19,21 +19,29 @@ Followed by the weekday 6:45 ET scheduled task. Goal: a 14-page Kindle PDF in Ab
   - `I` legs (prev month) → `income_prev_month` totals by type.
 - Copy numbers carefully. After writing `data.json`, re-read every balance and spot-check 10 transactions against the tool output.
 
-## 2. Gather news (fresh every morning, every item with a real tappable URL)
-Search separately for each: market close (latest session), Treasury yields/curve + week-ahead calendar, Apple (Gurman/Power On, supply chain, analyst notes), HFT/market structure (HRT, Jane Street, Citadel Securities, venues, SEC/Reg NMS), CPA/accounting (FASB, PCAOB, SEC, AICPA, deadlines), NYC (MTA service/policy, Yorkville/10128 hyperlocal; Rochester only if relevant), and 3 commute reads (5–8 min) with "why it matters".
+## 2. Gather news (fresh every morning)
+Search separately for each: market close (latest session), Treasury yields/curve + week-ahead calendar, Apple (Gurman/Power On, supply chain, analyst notes), HFT/market structure (HRT, Jane Street, Citadel Securities, venues, SEC/Reg NMS), CPA/accounting (FASB, PCAOB, SEC, AICPA, deadlines), NYC (MTA service/policy, Yorkville/10128 hyperlocal; Rochester only if relevant), and 3 commute reads.
+
+**Sourcing style (Abe's preference): no inline links.** Tapping links on a Kindle is useless. Name the outlet in plain text at the end of the item, e.g. "(Bloomberg)" or "(MTA)". Put every URL once in the top-level `sources` list (`[["Bloomberg - 10Y hits 2002 high", "https://..."], ...]`), which prints at the back.
 
 ## 3. Write `data.json` (schema = `examples/sample.json`)
-Narrative blocks: `{"type": "h2"|"p"|"note"|"bullet"|"table"|"space", "text": ...}`. Text is ReportLab markup: `<b>`, `<i>`, `<a href="URL" color="#1a4b8c"><u>src</u></a>`; escape `&` as `&amp;`. Tables: `{"type":"table","rows":[[...]],"widths":[fractions summing to 1]}`.
+Narrative blocks: `{"type": "h2"|"p"|"note"|"bullet"|"read"|"quote"|"table"|"space", "text": ...}`. Text is ReportLab markup (`<b>`, `<i>`; escape `&` as `&amp;`). Tables: `{"type":"table","rows":[[...]],"widths":[fractions summing to 1]}`. `read` = long-form paragraph (indented, for Commute Reads); `quote` = italic excerpt block.
 
-Keys: `delta` (2 bullets: yield shift; top HFT/Apple leak — spend pace bullet is auto-generated), `auditor_callouts` (max 3), `markets`, `rates` (include a Bond Literacy block), `tech_apple`, `industry` (HFT half + CPA half), `nyc`, `commute_reads`, `audit_flags`, `methodology` (today's specific limits).
+Keys: `delta` (2 bullets: yield shift; top HFT/Apple leak; the spend-pace bullet is auto-generated), `auditor_callouts` (max 3), `markets`, `rates` (include a Bond Literacy block), `tech_apple`, `industry` (HFT half + CPA half), `nyc`, `commute_reads`, `audit_flags`, `methodology` (today's specific limits), plus top-level `sources`.
 
-Voice: numbers-native, terse, proper accounting lingo, never cringe. Show the math. Each page must fit one Kindle screen — the builder shrinks overflow, so keep each page to roughly 8–10 short items.
+**Fill the pages.** Sections flow onto "(cont.)" pages at full size; nothing is shrunk. Abe wants every page materially full and no big white space. The builder prints `section_fill` (how full each section's last page is). For the narrative sections (Markets, Rates & Bonds, Tech & Apple, Industry, NYC, Commute Reads), the last page must be at least 0.80 full. If one isn't, add substance: more stories, more numbers, a short "why it matters" line, a mini-table. No filler. If a section spills onto a "(cont.)" page that's under 0.5 full, either trim it back to one page or fill that page too. Rebuild until it passes.
+
+**Commute Reads = 2-3 full pages of actual reading** (Abe prefers reading on the page over links). Three pieces, each with an `h2` headline + source line, then 300-450 words in `read`/`quote` blocks, then a one-line "Why it matters".
+- **Public-domain primary sources may be excerpted verbatim at length**: US federal government works such as Fed speeches/testimony (federalreserve.gov), SEC statements/releases (sec.gov), Treasury, BLS, BEA, CBO, CRS reports. Prefer these. Attribute clearly ("Gov. X, speech at Y, Oct 12").
+- **Copyrighted articles** (Bloomberg, WSJ, FT, Reuters, newspapers, blogs, social posts): do NOT reproduce paragraphs. Write an original digest in your own words that covers the argument, numbers and context, with at most one direct quote under 15 words. Never mirror the article's structure or sentences.
+
+Voice: numbers-native, terse, proper accounting lingo, never cringe. Show the math.
 
 ## 4. Build and check
 ```
 python3 builder/pulse.py <scratch>/data.json <scratch>/out
 ```
-Then: confirm 14 pages, render pages 1, 2 and 5 to PNG and look at them (nothing blank, no overflowed tiny text, links present), and check the printed totals match the ledger.
+Then: check `section_fill` against the targets above; render the cover, one news page and a Commute Reads page to PNG and look at them; check the printed totals match the ledger. Page count is usually 15-17 now (Commute Reads spans 2-3 pages); that's expected.
 
 ## 5. Send
 The send branch must start from `main` (GitHub reads the workflow file from the pushed branch).
