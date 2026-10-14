@@ -29,13 +29,17 @@ Narrative blocks: `{"type": "h2"|"p"|"note"|"bullet"|"read"|"quote"|"table"|"spa
 
 Keys: `delta` (2 bullets: yield shift; top HFT/Apple leak; the spend-pace bullet is auto-generated), `auditor_callouts` (max 3), `markets`, `rates` (include a Bond Literacy block), `tech_apple`, `industry` (HFT half + CPA half), `nyc`, `commute_reads`, `audit_flags`, `methodology` (today's specific limits), plus top-level `sources`.
 
-**Fill the pages.** Sections flow onto "(cont.)" pages at full size; nothing is shrunk. Abe wants every page materially full and no big white space. The builder prints `section_fill` (how full each section's last page is). For the narrative sections (Markets, Rates & Bonds, Tech & Apple, Industry, NYC, Commute Reads), the last page must be at least 0.80 full. If one isn't, add substance: more stories, more numbers, a short "why it matters" line, a mini-table. No filler. If a section spills onto a "(cont.)" page that's under 0.5 full, either trim it back to one page or fill that page too. Rebuild until it passes.
+**Fill the pages.** Sections flow onto "(cont.)" pages at full size; nothing is shrunk. Abe wants every page materially full and no big white space. The builder prints `section_fill` (how full each section's last page is). For the narrative sections (Markets, Rates & Bonds, Tech & Apple, Industry, NYC, Commute Reads), the last page must be at least 0.80 full. For Your Money and Spend & Audit (mostly auto-generated), if they spill onto a "(cont.)" page under 0.5 full, tighten `auditor_callouts` / `audit_flags` so the section fits one page. If one isn't, add substance: more stories, more numbers, a short "why it matters" line, a mini-table. No filler. If a section spills onto a "(cont.)" page that's under 0.5 full, either trim it back to one page or fill that page too. Rebuild until it passes.
 
 **Commute Reads = 2-3 full pages of actual reading** (Abe prefers reading on the page over links). Three pieces, each with an `h2` headline + source line, then 300-450 words in `read`/`quote` blocks, then a one-line "Why it matters".
 - **Public-domain primary sources may be excerpted verbatim at length**: US federal government works such as Fed speeches/testimony (federalreserve.gov), SEC statements/releases (sec.gov), Treasury, BLS, BEA, CBO, CRS reports. Prefer these. Attribute clearly ("Gov. X, speech at Y, Oct 12").
 - **Copyrighted articles** (Bloomberg, WSJ, FT, Reuters, newspapers, blogs, social posts): do NOT reproduce paragraphs. Write an original digest in your own words that covers the argument, numbers and context, with at most one direct quote under 15 words. Never mirror the article's structure or sentences.
 
 Voice: numbers-native, terse, proper accounting lingo, never cringe. Show the math.
+
+**Number format (GAAP):** negative dollar amounts in parentheses: ($5,040), never -$5,040. The builder auto-converts "-$" in text, but write it correctly anyway. Percent moves keep their sign (-0.47%).
+
+**Font:** the builder sets everything in OpenDyslexic (fonts/ in the repo). It lacks arrow glyphs; write "to"/"up"/"down" instead of arrows.
 
 ## 4. Build and check
 ```
@@ -44,11 +48,12 @@ python3 builder/pulse.py <scratch>/data.json <scratch>/out
 Then: check `section_fill` against the targets above; render the cover, one news page and a Commute Reads page to PNG and look at them; check the printed totals match the ledger. Page count is usually 15-17 now (Commute Reads spans 2-3 pages); that's expected.
 
 ## 5. Send
-The send branch must start from `main` (GitHub reads the workflow file from the pushed branch).
+The send branch must start from the latest `main`: GitHub runs the workflow file from the pushed branch, so a stale base runs stale send code (this happened on Oct 14 and delayed delivery). Always `git fetch` first and branch from `origin/main`, never from a local or older ref.
 ```
 cd <clone>; git fetch origin main
 git ls-remote --exit-code --heads origin outbox && echo "outbox exists - stop and report"
 git checkout -B outbox origin/main
+git diff --quiet origin/main HEAD -- .github || { echo "outbox is not based on latest main - stop"; exit 1; }
 cp <scratch>/out/Abes_Daily_Pulse_*.pdf . && git add -f Abes_Daily_Pulse_*.pdf
 git commit -qm "Pulse $(date +%F)" && git push origin outbox
 git checkout main && git branch -D outbox && rm -f Abes_Daily_Pulse_*.pdf
