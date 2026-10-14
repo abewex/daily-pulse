@@ -49,6 +49,7 @@ The send branch must start from `main` (GitHub reads the workflow file from the 
 cd <clone>; git fetch origin main
 git ls-remote --exit-code --heads origin outbox && echo "outbox exists - stop and report"
 git checkout -B outbox origin/main
+[ "$(git rev-parse HEAD)" = "$(git ls-remote origin refs/heads/main | cut -f1)" ] || echo "stale base - refetch, don't push"
 cp <scratch>/out/Abes_Daily_Pulse_*.pdf . && git add -f Abes_Daily_Pulse_*.pdf
 git commit -qm "Pulse $(date +%F)" && git push origin outbox
 git checkout main && git branch -D outbox && rm -f Abes_Daily_Pulse_*.pdf

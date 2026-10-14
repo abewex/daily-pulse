@@ -329,7 +329,10 @@ def build(data, out_dir):
         doc.addPageTemplates([
             PageTemplate("cover", [Frame(M, BOTTOM, CW, TOP_COVER-BOTTOM, 0, 0, 0, 0, id="c")], onPageEnd=chrome),
             PageTemplate("body", [Frame(M, BOTTOM, CW, TOP_BODY-BOTTOM, 0, 0, 0, 0, id="b")], onPageEnd=chrome)])
-        doc.build(story())
+        flow = story()
+        for fl in flow:
+            fl.__dict__.pop("_postponed", None)  # pass-1 state must not leak into pass 2 (else LayoutError)
+        doc.build(flow)
         return doc
 
     first = render(out, 0)                       # pass 1: learn the page count
